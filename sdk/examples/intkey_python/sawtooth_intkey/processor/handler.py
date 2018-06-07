@@ -67,12 +67,12 @@ class IntkeyTransactionHandler(TransactionHandler):
             updated_state = _do_intkey(verb, name, value, state)
 
             _set_state_data(name, updated_state, context)
-
-            attributes = [("verb", verb), ("name", name), ("value", str(value)), ("status", "COMMITED")]
+            # transaction is actually a processor_pb2.TpProcessRequest object
+            attributes = [("txn-id", transaction.signature), ("verb", verb), ("name", name), ("value", str(value)), ("status", "COMMITED")]
             context.add_event("intkey/txn-commit", attributes=attributes)
         except InvalidTransaction as e:
-            attributes = [("verb", verb), ("name", name), ("value", str(value)), ("status", "INVALID")]
-            context.add_event("intkey/txn-commit", attributes=attributes)
+            attributes = [("txn-id", transaction.signature), ("verb", verb), ("name", name), ("value", str(value)), ("status", "INVALID")]
+            context.add_event("intkey/txn-abort", attributes=attributes)
             raise e
 
 
