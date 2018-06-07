@@ -22,6 +22,7 @@ import cbor
 from sawtooth_sdk.processor.handler import TransactionHandler
 from sawtooth_sdk.processor.exceptions import InvalidTransaction
 from sawtooth_sdk.processor.exceptions import InternalError
+from sawtooth_sdk.protobuf.events_pb2 import Event
 
 
 LOGGER = logging.getLogger(__name__)
@@ -58,13 +59,21 @@ class IntkeyTransactionHandler(TransactionHandler):
         return [INTKEY_ADDRESS_PREFIX]
 
     def apply(self, transaction, context):
-        verb, name, value = _unpack_transaction(transaction)
+        try:
+            verb, name, value = _unpack_transaction(transaction)
 
-        state = _get_state_data(name, context)
+            state = _get_state_data(name, context)
 
-        updated_state = _do_intkey(verb, name, value, state)
+            updated_state = _do_intkey(verb, name, value, state)
 
-        _set_state_data(name, updated_state, context)
+            _set_state_data(name, updated_state, context)
+
+            attributes = [("verb", verb), ("name", name), ("value", str(value)), ("status", "COMMITED")]
+            context.add_event("intkey/txn-commit", attributes=attributes)
+        except InvalidTransaction as e:
+            attributes = [("verb", verb), ("name", name), ("value", str(value)), ("status", "INVALID")]
+            context.add_event("intkey/txn-commit", attributes=attributes)
+            raise e
 
 
 def _unpack_transaction(transaction):
