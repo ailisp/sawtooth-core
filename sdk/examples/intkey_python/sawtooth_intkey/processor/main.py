@@ -42,6 +42,11 @@ def parse_args(args):
                         default=0,
                         help='Increase output sent to stderr')
 
+    parser.add_argument('-i', '--interval',
+                        type=int,
+                        default=5,
+                        help='Seconds to ping register to validator to keep alive')
+
     try:
         version = pkg_resources.get_distribution(DISTRIBUTION_NAME).version
     except pkg_resources.DistributionNotFound:
@@ -87,6 +92,13 @@ def main(args=None):
 
         processor.add_handler(handler)
 
+        import threading
+        import time
+        def ping_register():
+            while(True):
+                time.sleep(opts.interval)
+                processor._register()
+        threading.Thread(target=ping_register).start()
         processor.start()
     except KeyboardInterrupt:
         pass

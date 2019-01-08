@@ -101,7 +101,7 @@ class ProcessorManager:
                 self._processors[key].add_processor(value)
             if value.connection_id not in self._identities:
                 self._identities[value.connection_id] = [key]
-            else:
+            elif key not in self._identities[value.connection_id]:
                 self._identities[value.connection_id].append(key)
             self._condition.notify_all()
 
@@ -306,7 +306,8 @@ class RoundRobinProcessorIterator(ProcessorIterator):
 
     def add_processor(self, processor):
         with self._lock:
-            self._processors.append(processor)
+            if processor not in self._processors:
+                self._processors.append(processor)
             self._inf_iterator = itertools.cycle(self._processors)
 
     def get_processor(self, processor_identity):
